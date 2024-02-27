@@ -1,10 +1,14 @@
 <template>
   <div>
-    <div>round {{ round }}</div>
+    <div style="font-size:20px; font-weight:700">
+      Round {{ round }}
+    </div>
+    <div style="margin: 20px 0 0 0" v-show="sum">You've reached level {{ sum }}</div>
     <div class="game-board">
       <button v-for="(button, index) in buttons" @click="clickButton(index)" :key="index"
         :class="['game-button', button.color, button.active ? 'active' : '', isPlaying ? 'playing' : '']"></button>
     </div>
+    <div style="margin: 20px 0 0 0; color:red" v-show="yourOrder">Your order</div>
     <div class="levels">
       <span>Change level</span>
 
@@ -24,8 +28,8 @@
       </label>
     </div>
     <div class="game-controls">
-      <button @click="startRound">Start</button>
-      <button @click="resetGame">Reset</button>
+      <button @click="clickStartRound">Start</button>
+      <button @click="clickResetGame">Reset</button>
     </div>
   </div>
 </template>
@@ -38,6 +42,7 @@ import sound4 from "../assets/4.ogg"
 
 
 const audio1 = new Audio()
+// const audioStart = new Audio();
 
 
 
@@ -54,6 +59,7 @@ export default {
       round: 1,
       isPlaying: false,
       level: 1,
+      sum: null,
     };
   },
   methods: {
@@ -61,12 +67,15 @@ export default {
       this.playerSequence = [];
       this.sequence = [];
       this.round = 1;
-      this.isPlaying = false
+      this.isPlaying = false;
+      this.yourOrder = false;
     },
 
     startRound() {
       let i = 0;
       this.sequence = []
+      this.yourOrder = false;
+      this.sum = null
       const value = Math.floor(Math.random() * 4)
       this.sequence.push(value)
       this.buttons[value].active = true
@@ -111,6 +120,7 @@ export default {
 
       p.then(() => {
         this.isPlaying = true;
+        this.yourOrder = true;
       })
 
     },
@@ -133,10 +143,20 @@ export default {
         audio1.src = this.buttons[index].sound;
         audio1.play();
 
+        this.buttons = this.buttons.map((el, i) => {
+          return { ...el, active: i == index }
+        })
+
+        setTimeout(() => {
+          this.buttons[index].active = false;
+        }, 350)
+
         if (this.sequence[0] === index) {
           this.sequence.shift();
         }
         else {
+          this.sum = this.round;
+          this.yourOrder = false;
           this.resetGame()
           return;
         }
@@ -144,11 +164,20 @@ export default {
         if (this.sequence.length === 0) {
           this.round = this.round + 1;
           this.isPlaying = false;
+          this.yourOrder = false;
           setTimeout(() => {
             this.startRound()
-          }, 500)
+          }, 1000)
         }
       }
+    },
+    clickStartRound() {
+      if (this.round === 1)
+        this.startRound();
+    },
+    clickResetGame() {
+      this.resetGame();
+      this.sum = null
     }
   }
 };
@@ -172,7 +201,7 @@ export default {
   border: 0;
 }
 
-.game-button.playing:hover {
+.game-button.playing.active {
   opacity: 0.5;
 }
 
